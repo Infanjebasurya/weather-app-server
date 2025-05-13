@@ -1,5 +1,3 @@
-import axios from 'axios';
-
 const API_KEY = process.env.OPENWEATHER_API_KEY;
 const BASE_URL = 'https://api.openweathermap.org/data/2.5/weather';
 
@@ -18,22 +16,19 @@ export default async function handler(req, res) {
   }
 
   try {
-    const response = await axios.get(BASE_URL, {
-      params: {
-        q: city,
-        units: 'metric',
-        appid: API_KEY,
-      },
-    });
+    const url = `${BASE_URL}?q=${encodeURIComponent(city)}&units=metric&appid=${API_KEY}`;
+    const response = await fetch(url);
 
-    res.status(200).json(response.data);
-  } catch (error) {
-    if (error.response) {
-      res.status(error.response.status).json({
-        error: error.response.data.message || 'Failed to fetch weather data',
+    if (!response.ok) {
+      const errorData = await response.json();
+      return res.status(response.status).json({
+        error: errorData.message || 'Failed to fetch weather data',
       });
-    } else {
-      res.status(500).json({ error: 'Internal server error' });
     }
+
+    const data = await response.json();
+    res.status(200).json(data);
+  } catch (error) {
+    res.status(500).json({ error: 'Internal server error' });
   }
 }
